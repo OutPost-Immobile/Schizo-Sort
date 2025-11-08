@@ -26,7 +26,7 @@ inline void TestRandomArraysWithThreads(int iterations)
         std::vector<TimeResult> results;
         for (auto array : randomArrays)
         {
-            std::vector<int> tempArray;
+            std::vector<double> tempArray;
             for (int i = 0; i < iterations; ++i)
             {
                 std::shuffle(array.begin(), array.end(), std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count()));
@@ -35,10 +35,10 @@ inline void TestRandomArraysWithThreads(int iterations)
                 quickSortThreaded(array, 0, array.size() - 1, threadBottleNeck);
                 auto end = std::chrono::high_resolution_clock::now();
 
-                tempArray.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+                tempArray.push_back(std::chrono::duration<double, std::milli>(end - start).count());
             }
 
-            auto averageTime = std::accumulate(tempArray.begin(), tempArray.end(), 0) / tempArray.size();
+            auto averageTime = std::accumulate(tempArray.begin(), tempArray.end(), 0.0) / tempArray.size();
 
             std::cout << "Array size: " << array.size() << std::endl;
             std::cout << "Average time: " << averageTime << std::endl;

@@ -4,11 +4,11 @@
 class TimeResult
 {
 private:
-    int registeredTime = 0;
+    double registeredTime = 0.0;
     int arraySize = 0;
 
 public:
-    int GetTime()
+    double GetTime()
     {
         return registeredTime;
     }
@@ -18,7 +18,7 @@ public:
         return arraySize;
     }
 
-    void SetTime(int time)
+    void SetTime(double time)
     {
         registeredTime = time;
     }
