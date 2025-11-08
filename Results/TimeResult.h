@@ -7,7 +7,6 @@ private:
     int registeredTime = 0;
     int arraySize = 0;
 
-
 public:
     int GetTime()
     {
