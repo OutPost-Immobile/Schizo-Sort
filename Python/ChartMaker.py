@@ -1,95 +1,176 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import glob
+import os
+
+# Set Polish font for matplotlib (optional, for better Polish character support)
+plt.rcParams['font.family'] = ['DejaVu Sans', 'Liberation Sans', 'Arial']
 
 def create_performance_chart():
-    # Read the CSV file
-    try:
-        df = pd.read_csv('../results.csv')
-    except FileNotFoundError:
-        print("Error: results.csv file not found!")
+    # Find all results CSV files
+    csv_files = glob.glob('*results.csv')
+    csv_files = [f for f in csv_files if f != 'results.csv']  # Exclude the original results.csv
+
+    if not csv_files:
+        print("Nie znaleziono plików CSV z wynikami!")
         return
 
-    # Assuming the CSV has columns for array size and time
-    # Adjust column names based on your actual CSV structure
-    if 'ArraySize' in df.columns and 'Time' in df.columns:
-        x = df['ArraySize']
-        y = df['Time']
-    elif len(df.columns) >= 2:
-        # Use first two columns if column names are different
-        x = df.iloc[:, 0]
-        y = df.iloc[:, 1]
-    else:
-        print("Error: CSV file doesn't have enough columns!")
-        return
+    # Sort files by thread count
+    csv_files.sort(key=lambda x: int(x.replace('results.csv', '')))
 
-    # Create the figure and axis
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(15, 10))
 
-    # Create the plot
-    plt.plot(x, y, 'b-o', linewidth=2, markersize=8, markerfacecolor='red',
-             markeredgecolor='darkred', markeredgewidth=2)
+    colors = plt.cm.tab10(np.linspace(0, 1, len(csv_files)))
+
+    for i, csv_file in enumerate(csv_files):
+        try:
+            df = pd.read_csv(csv_file)
+            thread_count = csv_file.replace('results.csv', '')
+
+            # Assuming CSV structure: Rozmiar Tablicy, Czas
+            if len(df.columns) >= 2:
+                x = df.iloc[:, 0]  # Rozmiar tablicy
+                y = df.iloc[:, 1]  # Czas
+
+                plt.plot(x, y, 'o-', linewidth=2, markersize=6,
+                         color=colors[i], label=f'{thread_count} wątków',
+                         markerfacecolor=colors[i], markeredgecolor='black',
+                         markeredgewidth=0.5)
+
+        except Exception as e:
+            print(f"Błąd odczytu {csv_file}: {e}")
 
     # Customize the chart
-    plt.title('QuickSort Performance Analysis\nExecution Time vs Array Size',
+    plt.title('Analiza Wydajności algorytmu sortowania szybkiego\nCzas Wykonania vs Rozmiar Tablicy dla Różnych Liczb Wątków',
               fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('Array Size', fontsize=14, fontweight='bold')
-    plt.ylabel('Average Time (milliseconds)', fontsize=14, fontweight='bold')
+    plt.xlabel('Rozmiar Tablicy', fontsize=14, fontweight='bold')
+    plt.ylabel('Średni Czas (milisekundy)', fontsize=14, fontweight='bold')
 
-    # Add grid for better readability
+    # Add grid and legend
     plt.grid(True, alpha=0.3, linestyle='--')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
 
-    # Format x-axis to show values in a readable format
+    # Format axes
     plt.ticklabel_format(style='plain', axis='x')
     plt.xticks(rotation=45)
 
-    # Add value labels on data points
-    for i, (xi, yi) in enumerate(zip(x, y)):
-        plt.annotate(f'{yi}ms', (xi, yi), textcoords="offset points",
-                     xytext=(0,10), ha='center', fontsize=10,
-                     bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.7))
-
-    # Adjust layout to prevent label cutoff
+    # Adjust layout
     plt.tight_layout()
 
     # Save as JPG
-    plt.savefig('quicksort_performance_chart.jpg', dpi=300, bbox_inches='tight',
+    plt.savefig('porownanie_wydajnosci_quicksort.jpg', dpi=300, bbox_inches='tight',
                 facecolor='white', edgecolor='none')
 
-    print("Chart saved as 'quicksort_performance_chart.jpg'")
-
-    # Optionally display the chart
+    print("Wykres zapisano jako 'porownanie_wydajnosci_quicksort.jpg'")
     plt.show()
 
-def print_statistics():
-    """Print some basic statistics about the performance data"""
-    try:
-        df = pd.read_csv('results.csv')
+def create_individual_charts():
+    """Twórz indywidualne wykresy dla każdej liczby wątków"""
+    csv_files = glob.glob('*results.csv')
+    csv_files = [f for f in csv_files if f != 'results.csv']
+    csv_files.sort(key=lambda x: int(x.replace('results.csv', '')))
 
-        if 'ArraySize' in df.columns and 'Time' in df.columns:
-            sizes = df['Rozmiar tablicy']
-            times = df['Czas sortowania']
+    for csv_file in csv_files:
+        try:
+            df = pd.read_csv(csv_file)
+            thread_count = csv_file.replace('results.csv', '')
+
+            if len(df.columns) >= 2:
+                x = df.iloc[:, 0]
+                y = df.iloc[:, 1]
+
+                plt.figure(figsize=(10, 6))
+                plt.plot(x, y, 'b-o', linewidth=2, markersize=8,
+                         markerfacecolor='red', markeredgecolor='darkred',
+                         markeredgewidth=2)
+
+                # Add value labels
+                for xi, yi in zip(x, y):
+                    plt.annotate(f'{yi}ms', (xi, yi), textcoords="offset points",
+                                 xytext=(0,10), ha='center', fontsize=9,
+                                 bbox=dict(boxstyle="round,pad=0.3",
+                                           facecolor="yellow", alpha=0.7))
+
+                plt.title(f'Wydajność algorytmu sortowania szybkiego - {thread_count} Wątków\nCzas Wykonania vs Rozmiar Tablicy',
+                          fontsize=14, fontweight='bold')
+                plt.xlabel('Rozmiar Tablicy', fontsize=12, fontweight='bold')
+                plt.ylabel('Średni Czas (milisekundy)', fontsize=12, fontweight='bold')
+                plt.grid(True, alpha=0.3, linestyle='--')
+                plt.ticklabel_format(style='plain', axis='x')
+                plt.xticks(rotation=45)
+                plt.tight_layout()
+
+                plt.savefig(f'quicksort_{thread_count}watkow.jpg', dpi=300,
+                            bbox_inches='tight', facecolor='white')
+                print(f"Wykres zapisano jako 'quicksort_{thread_count}watkow.jpg'")
+                plt.close()
+
+        except Exception as e:
+            print(f"Błąd przetwarzania {csv_file}: {e}")
+
+def print_comprehensive_statistics():
+    """Wyświetl statystyki dla wszystkich konfiguracji wątków"""
+    csv_files = glob.glob('*results.csv')
+    csv_files = [f for f in csv_files if f != 'results.csv']
+    csv_files.sort(key=lambda x: int(x.replace('results.csv', '')))
+
+    print("\n=== Kompleksowe Statystyki Wydajności ===")
+
+    best_times = {}
+
+    for csv_file in csv_files:
+        try:
+            df = pd.read_csv(csv_file)
+            thread_count = csv_file.replace('results.csv', '')
+
+            if len(df.columns) >= 2:
+                sizes = df.iloc[:, 0]
+                times = df.iloc[:, 1]
+
+                print(f"\n--- {thread_count} Wątków ---")
+                print(f"Średni czas dla wszystkich rozmiarów: {times.mean():.2f}ms")
+                print(f"Najlepszy czas: {times.min()}ms (rozmiar: {sizes[times.idxmin()]:,})")
+                print(f"Najgorszy czas: {times.max()}ms (rozmiar: {sizes[times.idxmax()]:,})")
+
+                # Store best performance for comparison
+                best_times[thread_count] = times.min()
+
+        except Exception as e:
+            print(f"Błąd odczytu {csv_file}: {e}")
+
+    if best_times:
+        best_config = min(best_times.items(), key=lambda x: x[1])
+        print(f"\n=== Najlepsza Ogólna Wydajność ===")
+        print(f"Najlepsza konfiguracja: {best_config[0]} wątków z czasem {best_config[1]}ms")
+
+def main():
+    """Główna funkcja z menu użytkownika"""
+    while True:
+        print("\n=== Generator Wykresów Wydajności sortowania szybkiego ===")
+        print("1. Utwórz wykres porównawczy (wszystkie liczby wątków)")
+        print("2. Utwórz indywidualne wykresy dla każdej liczby wątków")
+        print("3. Pokaż statystyki")
+        print("4. Wykonaj wszystko powyżej")
+        print("5. Wyjście")
+
+        choice = input("\nWprowadź swój wybór (1-5): ").strip()
+
+        if choice == '1':
+            create_performance_chart()
+        elif choice == '2':
+            create_individual_charts()
+        elif choice == '3':
+            print_comprehensive_statistics()
+        elif choice == '4':
+            create_performance_chart()
+            create_individual_charts()
+            print_comprehensive_statistics()
+        elif choice == '5':
+            print("Do widzenia!")
+            break
         else:
-            sizes = df.iloc[:, 0]
-            times = df.iloc[:, 1]
-
-        print("\n=== Performance Statistics ===")
-        print(f"Smallest array size: {sizes.min():,}")
-        print(f"Largest array size: {sizes.max():,}")
-        print(f"Fastest time: {times.min()}ms")
-        print(f"Slowest time: {times.max()}ms")
-        print(f"Average time: {times.mean():.2f}ms")
-
-        # Calculate time complexity approximation
-        if len(sizes) > 1:
-            time_ratio = times.iloc[-1] / times.iloc[0]
-            size_ratio = sizes.iloc[-1] / sizes.iloc[0]
-            print(f"\nTime scaling factor: {time_ratio:.2f}x")
-            print(f"Size scaling factor: {size_ratio:.2f}x")
-
-    except Exception as e:
-        print(f"Error reading statistics: {e}")
+            print("Nieprawidłowy wybór. Spróbuj ponownie.")
 
 if __name__ == "__main__":
-    create_performance_chart()
-    print_statistics()
+    main()
