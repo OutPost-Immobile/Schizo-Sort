@@ -1,8 +1,6 @@
-#include <iostream>
-#include "Algorithms.hpp"
+#include "Tester.hpp"
+
 int main()
 {
-
-    std::cout << ", World!" << std::endl;
-    return 0;
+    TestRandomArraysWithThreads(10);
 }
